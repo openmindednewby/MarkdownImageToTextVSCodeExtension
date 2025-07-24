@@ -1,2 +1,2 @@
 # MarkdownOCRVSCodeExtension
-Simple VSCode extension that takes an image from a markdown image and generates the text
+Simple VSCode extension that takes an image from a markdown file and generates the text

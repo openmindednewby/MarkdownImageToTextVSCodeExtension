@@ -70,22 +70,8 @@ function activate(context) {
     const disposable = vscode.commands.registerCommand('markdown-image-to-text.getTextFromImage', async (args) => {
         try {
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
-            let imageData;
-            if (args.imagePath.startsWith('http')) {
-                imageData = await fetchImageBuffer(args.imagePath);
-            }
-            else {
-                const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
-                const fullPath = workspaceRoot
-                    ? path.join(workspaceRoot, args.imagePath)
-                    : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
-                imageData = await fs_1.promises.readFile(fullPath);
-            }
-            const worker = await (0, tesseract_js_1.createWorker)();
-            await worker.load();
-            const { data: { text } } = await worker.recognize(imageData);
-            const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
-            await worker.terminate();
+            const imageData = await getImageData(args, doc);
+            const formattedText = await getFormattedText(imageData);
             const edit = new vscode.WorkspaceEdit();
             const insertPosition = new vscode.Position(args.line + 1, 0);
             edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
@@ -96,6 +82,29 @@ function activate(context) {
         }
     });
     context.subscriptions.push(disposable);
+}
+function deactivate() { }
+async function getFormattedText(imageData) {
+    const worker = await (0, tesseract_js_1.createWorker)();
+    await worker.load();
+    const { data: { text } } = await worker.recognize(imageData);
+    const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
+    await worker.terminate();
+    return formattedText;
+}
+async function getImageData(args, doc) {
+    let imageData;
+    if (args.imagePath.startsWith('http')) {
+        imageData = await fetchImageBuffer(args.imagePath);
+    }
+    else {
+        const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
+        const fullPath = workspaceRoot
+            ? path.join(workspaceRoot, args.imagePath)
+            : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
+        imageData = await fs_1.promises.readFile(fullPath);
+    }
+    return imageData;
 }
 function fetchImageBuffer(urlStr) {
     return new Promise((resolve, reject) => {
@@ -108,5 +117,4 @@ function fetchImageBuffer(urlStr) {
         }).on('error', reject);
     });
 }
-function deactivate() { }
 //# sourceMappingURL=extension.js.map

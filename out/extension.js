@@ -73,9 +73,7 @@ function activate(context) {
             const imageData = await getImageData(args, doc);
             const formattedText = await getFormattedText(imageData);
             const edit = new vscode.WorkspaceEdit();
-            const insertPosition = new vscode.Position(args.line + 1, 0);
-            edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
-            await vscode.workspace.applyEdit(edit);
+            await writeExtractedText(args, edit, doc, formattedText);
         }
         catch (err) {
             vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
@@ -83,6 +81,8 @@ function activate(context) {
     });
     context.subscriptions.push(disposable);
     const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
+        const MAX_CONCURRENT_WORKERS = 2;
+        const THROTTLE_DELAY_MS = 500; // wait time between batches
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");
@@ -111,6 +111,11 @@ function activate(context) {
         await vscode.workspace.applyEdit(edit);
     });
     context.subscriptions.push(scanAllImagesCommand);
+}
+async function writeExtractedText(args, edit, doc, formattedText) {
+    const insertPosition = new vscode.Position(args.line + 1, 0);
+    edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
+    await vscode.workspace.applyEdit(edit);
 }
 function deactivate() { }
 async function getFormattedText(imageData) {
@@ -145,5 +150,8 @@ function fetchImageBuffer(urlStr) {
             res.on('end', () => resolve(Buffer.concat(data)));
         }).on('error', reject);
     });
+}
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 //# sourceMappingURL=extension.js.map

@@ -43,8 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const formattedText = await getFormattedText(imageData);
 
                 const edit = new vscode.WorkspaceEdit();
-                const insertPosition = new vscode.Position(args.line + 1, 0);
-				edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);                await vscode.workspace.applyEdit(edit);
+                await writeExtractedText(args, edit, doc, formattedText);
             } catch (err) {
                 vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
             }
@@ -52,9 +51,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(disposable);
 
-    const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages',
+    
+   const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages',
     async () => {
+        const MAX_CONCURRENT_WORKERS = 2;
+        const THROTTLE_DELAY_MS = 500; // wait time between batches
         const editor = vscode.window.activeTextEditor;
+
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");
             return;
@@ -89,6 +92,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(scanAllImagesCommand);
 
+}
+
+async function writeExtractedText(args: { imagePath: string; docUri: string; line: number; }, edit: vscode.WorkspaceEdit, doc: vscode.TextDocument, formattedText: string) {
+    const insertPosition = new vscode.Position(args.line + 1, 0);
+    edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
+    await vscode.workspace.applyEdit(edit);
 }
 
 export function deactivate() {}
@@ -129,4 +138,8 @@ function fetchImageBuffer(urlStr: string): Promise<Buffer> {
             res.on('end', () => resolve(Buffer.concat(data)));
         }).on('error', reject);
     });
+}
+
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

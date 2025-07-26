@@ -55,12 +55,12 @@ export function activate(context: vscode.ExtensionContext) {
                 const worker = await createWorker();
                 await worker.load();
                 const { data: { text } } = await worker.recognize(imageData);
+				const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
                 await worker.terminate();
 
                 const edit = new vscode.WorkspaceEdit();
                 const insertPosition = new vscode.Position(args.line + 1, 0);
-                edit.insert(doc.uri, insertPosition, `\n\n> OCR result:\n\`\`\`\n${text.trim()}\n\`\`\`\n`);
-                await vscode.workspace.applyEdit(edit);
+				edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);                await vscode.workspace.applyEdit(edit);
             } catch (err) {
                 vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
             }

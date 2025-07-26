@@ -84,10 +84,11 @@ function activate(context) {
             const worker = await (0, tesseract_js_1.createWorker)();
             await worker.load();
             const { data: { text } } = await worker.recognize(imageData);
+            const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
             await worker.terminate();
             const edit = new vscode.WorkspaceEdit();
             const insertPosition = new vscode.Position(args.line + 1, 0);
-            edit.insert(doc.uri, insertPosition, `\n\n> OCR result:\n\`\`\`\n${text.trim()}\n\`\`\`\n`);
+            edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
             await vscode.workspace.applyEdit(edit);
         }
         catch (err) {

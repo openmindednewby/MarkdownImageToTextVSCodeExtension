@@ -88,6 +88,35 @@ function activate(context) {
         }
     });
     context.subscriptions.push(disposable);
+    const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor found.");
+            return;
+        }
+        const doc = editor.document;
+        const regex = /!\[.*?\]\((.+?)\)/g;
+        const edit = new vscode.WorkspaceEdit();
+        for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
+            const line = doc.lineAt(lineNum);
+            let match;
+            regex.lastIndex = 0; // Reset regex for each line
+            while ((match = regex.exec(line.text))) {
+                const imagePath = match[1];
+                try {
+                    const imageData = await getImageData({ imagePath, docUri: doc.uri.toString(), line: lineNum }, doc);
+                    const formattedText = await getFormattedText(imageData);
+                    const insertPosition = new vscode.Position(lineNum + 1, 0);
+                    edit.insert(doc.uri, insertPosition, `\n\n**OCR result:**\n\n${formattedText}\n`);
+                }
+                catch (err) {
+                    vscode.window.showErrorMessage(`Failed to OCR image on line ${lineNum + 1}: ${err instanceof Error ? err.message : err}`);
+                }
+            }
+        }
+        await vscode.workspace.applyEdit(edit);
+    });
+    context.subscriptions.push(scanAllImagesCommand);
 }
 function deactivate() { }
 async function getFormattedText(imageData) {

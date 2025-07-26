@@ -26,6 +26,10 @@
       {
         "command": "markdown-image-to-text.getTextFromImage",
         "title": "Extract Text from Markdown Image"
+      },
+      {
+        "command": "markdown-image-to-text.getTextFromAllImages",
+        "title": "Extract Text from All Images in Markdown file"
       }
     ]
   },

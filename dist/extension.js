@@ -83,7 +83,9 @@ function activate(context) {
             return;
         }
         try {
+            vscode.window.showErrorMessage(`Reading image file: ${fullPath}`);
             const data = await fs_1.promises.readFile(fullPath);
+            vscode.window.showErrorMessage(`Reading image data: ${data}`);
             const worker = await tesseract_js_1.createWorker({
                 logger: (m) => console.log(m),
             });
@@ -91,6 +93,7 @@ function activate(context) {
             await worker.loadLanguage('eng');
             await worker.initialize('eng');
             const { data: { text } } = await worker.recognize(data);
+            vscode.window.showErrorMessage(`Reading image text: ${text}`);
             await worker.terminate();
             const edit = new vscode.WorkspaceEdit();
             const insertPosition = new vscode.Position(args.line + 1, 0);

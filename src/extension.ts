@@ -46,14 +46,15 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             try {
+                vscode.window.showErrorMessage(`Reading image file: ${fullPath}`);
                 const data = await fs.readFile(fullPath);
-                const worker = await (createWorker as any)({
-					logger: (m: any) => console.log(m),
-				});
+                vscode.window.showErrorMessage(`Reading image data: ${data}`);
+                const worker = await (createWorker)();
                 await worker.load();
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
                 const { data: { text } } = await worker.recognize(data);
+                vscode.window.showErrorMessage(`Reading image text: ${text}`);
                 await worker.terminate();
 
                 const edit = new vscode.WorkspaceEdit();

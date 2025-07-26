@@ -51,8 +51,6 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage(`Reading image data: ${data}`);
                 const worker = await (createWorker)();
                 await worker.load();
-                await worker.loadLanguage('eng');
-                await worker.initialize('eng');
                 const { data: { text } } = await worker.recognize(data);
                 vscode.window.showErrorMessage(`Reading image text: ${text}`);
                 await worker.terminate();

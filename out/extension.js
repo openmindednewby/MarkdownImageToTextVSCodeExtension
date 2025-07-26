@@ -82,8 +82,6 @@ function activate(context) {
             vscode.window.showErrorMessage(`Reading image data: ${data}`);
             const worker = await (tesseract_js_1.createWorker)();
             await worker.load();
-            await worker.loadLanguage('eng');
-            await worker.initialize('eng');
             const { data: { text } } = await worker.recognize(data);
             vscode.window.showErrorMessage(`Reading image text: ${text}`);
             await worker.terminate();

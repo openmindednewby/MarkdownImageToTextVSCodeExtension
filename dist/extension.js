@@ -41,23 +41,14 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.activate = activate;
 exports.deactivate = deactivate;
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = __importStar(__webpack_require__(1));
-// This method is called when your extension is activated
 function activate(context) {
     console.log('Congratulations, your extension "markdown-image-to-text" is now active!');
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with registerCommand
-    // The commandId parameter must match the command field in package.json
-    const disposable = vscode.commands.registerCommand('markdown-image-to-text.helloWorld', () => {
-        // The code you place here will be executed every time your command is executed
-        // Display a message box to the user
+    const disposable = vscode.commands.registerCommand('markdown-image-to-text.getTextFromImage', () => {
         vscode.window.showInformationMessage('Hello World from MarkdownImageToText!');
     });
     context.subscriptions.push(disposable);
 }
-// This method is called when your extension is deactivated
 function deactivate() { }
 
 

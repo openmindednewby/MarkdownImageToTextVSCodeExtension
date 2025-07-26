@@ -73,7 +73,9 @@ function activate(context) {
             const imageData = await getImageData(args, doc);
             const formattedText = await getFormattedText(imageData);
             const edit = new vscode.WorkspaceEdit();
-            await writeExtractedText(args, edit, doc, formattedText);
+            const insertPosition = new vscode.Position(args.line + 1, 0);
+            insertFormattedText(edit, doc, insertPosition, formattedText);
+            await vscode.workspace.applyEdit(edit);
         }
         catch (err) {
             vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
@@ -101,7 +103,7 @@ function activate(context) {
                     const imageData = await getImageData({ imagePath, docUri: doc.uri.toString(), line: lineNum }, doc);
                     const formattedText = await getFormattedText(imageData);
                     const insertPosition = new vscode.Position(lineNum + 1, 0);
-                    edit.insert(doc.uri, insertPosition, `\n\n**OCR result:**\n\n${formattedText}\n`);
+                    insertFormattedText(edit, doc, insertPosition, formattedText);
                 }
                 catch (err) {
                     vscode.window.showErrorMessage(`Failed to OCR image on line ${lineNum + 1}: ${err instanceof Error ? err.message : err}`);
@@ -112,10 +114,8 @@ function activate(context) {
     });
     context.subscriptions.push(scanAllImagesCommand);
 }
-async function writeExtractedText(args, edit, doc, formattedText) {
-    const insertPosition = new vscode.Position(args.line + 1, 0);
+function insertFormattedText(edit, doc, insertPosition, formattedText) {
     edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
-    await vscode.workspace.applyEdit(edit);
 }
 function deactivate() { }
 async function getFormattedText(imageData) {

@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { createWorker } from 'tesseract.js';
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
 
 export function activate(context: vscode.ExtensionContext) {
     const hoverProvider = vscode.languages.registerHoverProvider('markdown', {
@@ -33,26 +36,25 @@ export function activate(context: vscode.ExtensionContext) {
 
     const disposable = vscode.commands.registerCommand('markdown-image-to-text.getTextFromImage',
         async (args: { imagePath: string; docUri: string; line: number }) => {
-            const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
-            const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
-            const fullPath = args.imagePath.startsWith('http')
-                ? undefined
-                : workspaceRoot
-                    ? path.join(workspaceRoot, args.imagePath)
-                    : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
-
-            if (!fullPath) {
-                vscode.window.showErrorMessage('Only local image files supported.');
-                return;
-            }
             try {
-                vscode.window.showErrorMessage(`Reading image file: ${fullPath}`);
-                const data = await fs.readFile(fullPath);
-                vscode.window.showErrorMessage(`Reading image data: ${data}`);
-                const worker = await (createWorker)();
+                const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
+
+                let imageData: Buffer;
+
+                if (args.imagePath.startsWith('http')) {
+                    imageData = await fetchImageBuffer(args.imagePath);
+                } else {
+                    const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
+                    const fullPath = workspaceRoot
+                        ? path.join(workspaceRoot, args.imagePath)
+                        : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
+
+                    imageData = await fs.readFile(fullPath);
+                }
+
+                const worker = await createWorker();
                 await worker.load();
-                const { data: { text } } = await worker.recognize(data);
-                vscode.window.showErrorMessage(`Reading image text: ${text}`);
+                const { data: { text } } = await worker.recognize(imageData);
                 await worker.terminate();
 
                 const edit = new vscode.WorkspaceEdit();
@@ -60,10 +62,24 @@ export function activate(context: vscode.ExtensionContext) {
                 edit.insert(doc.uri, insertPosition, `\n\n> OCR result:\n\`\`\`\n${text.trim()}\n\`\`\`\n`);
                 await vscode.workspace.applyEdit(edit);
             } catch (err) {
-                vscode.window.showErrorMessage(`Error reading image or OCR: ${err}`);
+                vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
             }
         });
+
     context.subscriptions.push(disposable);
+}
+
+function fetchImageBuffer(urlStr: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+        const urlObj = new URL(urlStr);
+        const client = urlObj.protocol === 'https:' ? https : http;
+
+        client.get(urlStr, (res) => {
+            const data: Uint8Array[] = [];
+            res.on('data', chunk => data.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(data)));
+        }).on('error', reject);
+    });
 }
 
 export function deactivate() {}

@@ -39,6 +39,9 @@ const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs_1 = require("fs");
 const tesseract_js_1 = require("tesseract.js");
+const https = __importStar(require("https"));
+const http = __importStar(require("http"));
+const url_1 = require("url");
 function activate(context) {
     const hoverProvider = vscode.languages.registerHoverProvider('markdown', {
         provideHover: async (doc, pos) => {
@@ -65,25 +68,22 @@ function activate(context) {
     });
     context.subscriptions.push(hoverProvider);
     const disposable = vscode.commands.registerCommand('markdown-image-to-text.getTextFromImage', async (args) => {
-        const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
-        const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
-        const fullPath = args.imagePath.startsWith('http')
-            ? undefined
-            : workspaceRoot
-                ? path.join(workspaceRoot, args.imagePath)
-                : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
-        if (!fullPath) {
-            vscode.window.showErrorMessage('Only local image files supported.');
-            return;
-        }
         try {
-            vscode.window.showErrorMessage(`Reading image file: ${fullPath}`);
-            const data = await fs_1.promises.readFile(fullPath);
-            vscode.window.showErrorMessage(`Reading image data: ${data}`);
-            const worker = await (tesseract_js_1.createWorker)();
+            const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
+            let imageData;
+            if (args.imagePath.startsWith('http')) {
+                imageData = await fetchImageBuffer(args.imagePath);
+            }
+            else {
+                const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
+                const fullPath = workspaceRoot
+                    ? path.join(workspaceRoot, args.imagePath)
+                    : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
+                imageData = await fs_1.promises.readFile(fullPath);
+            }
+            const worker = await (0, tesseract_js_1.createWorker)();
             await worker.load();
-            const { data: { text } } = await worker.recognize(data);
-            vscode.window.showErrorMessage(`Reading image text: ${text}`);
+            const { data: { text } } = await worker.recognize(imageData);
             await worker.terminate();
             const edit = new vscode.WorkspaceEdit();
             const insertPosition = new vscode.Position(args.line + 1, 0);
@@ -91,10 +91,21 @@ function activate(context) {
             await vscode.workspace.applyEdit(edit);
         }
         catch (err) {
-            vscode.window.showErrorMessage(`Error reading image or OCR: ${err}`);
+            vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
         }
     });
     context.subscriptions.push(disposable);
+}
+function fetchImageBuffer(urlStr) {
+    return new Promise((resolve, reject) => {
+        const urlObj = new url_1.URL(urlStr);
+        const client = urlObj.protocol === 'https:' ? https : http;
+        client.get(urlStr, (res) => {
+            const data = [];
+            res.on('data', chunk => data.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(data)));
+        }).on('error', reject);
+    });
 }
 function deactivate() { }
 //# sourceMappingURL=extension.js.map

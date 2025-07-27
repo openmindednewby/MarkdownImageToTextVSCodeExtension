@@ -83,8 +83,8 @@ function activate(context) {
     });
     context.subscriptions.push(disposable);
     const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
-        const MAX_CONCURRENT_WORKERS = 2;
-        const THROTTLE_DELAY_MS = 500;
+        const MAX_CONCURRENT_WORKERS = 4;
+        const THROTTLE_DELAY_MS = 50;
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");

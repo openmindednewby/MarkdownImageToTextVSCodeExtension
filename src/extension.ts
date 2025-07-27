@@ -55,8 +55,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     
    const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
-    const MAX_CONCURRENT_WORKERS = 2;
-    const THROTTLE_DELAY_MS = 500;
+    const MAX_CONCURRENT_WORKERS = 4;
+    const THROTTLE_DELAY_MS = 5;
 
     const editor = vscode.window.activeTextEditor;
     if (!editor) {

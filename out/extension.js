@@ -83,8 +83,9 @@ function activate(context) {
     });
     context.subscriptions.push(disposable);
     const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
-        const MAX_CONCURRENT_WORKERS = 4;
-        const THROTTLE_DELAY_MS = 5;
+        const config = vscode.workspace.getConfiguration("markdownImageToText");
+        const MAX_CONCURRENT_WORKERS = config.get("maxConcurrentWorkers", 4);
+        const THROTTLE_DELAY_MS = config.get("throttleDelayMs", 5);
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");
@@ -121,7 +122,8 @@ function activate(context) {
                 finally {
                     completed++;
                     printReport(startTime, completed, total, progress, task);
-                    await delay(THROTTLE_DELAY_MS);
+                    if (THROTTLE_DELAY_MS > 0)
+                        await delay(THROTTLE_DELAY_MS);
                 }
             };
             const spawnWorkers = async () => {

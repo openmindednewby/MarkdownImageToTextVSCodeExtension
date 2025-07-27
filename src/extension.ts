@@ -55,8 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     
    const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
-    const MAX_CONCURRENT_WORKERS = 4;
-    const THROTTLE_DELAY_MS = 5;
+    const config = vscode.workspace.getConfiguration("markdownImageToText");
+    const MAX_CONCURRENT_WORKERS = config.get<number>("maxConcurrentWorkers", 4);
+    const THROTTLE_DELAY_MS = config.get<number>("throttleDelayMs", 5);
 
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -98,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
                 completed++;
                 printReport(startTime, completed, total, progress, task);
 
-                await delay(THROTTLE_DELAY_MS);
+                if( THROTTLE_DELAY_MS > 0) await delay(THROTTLE_DELAY_MS);
             }
         };
 

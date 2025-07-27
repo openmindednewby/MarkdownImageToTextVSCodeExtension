@@ -31,7 +31,24 @@
         "command": "markdown-image-to-text.getTextFromAllImages",
         "title": "Extract Text from All Images in Markdown file"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Markdown Image to Text",
+      "properties": {
+        "markdownImageToText.maxConcurrentWorkers": {
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "description": "Maximum number of concurrent OCR workers."
+        },
+        "markdownImageToText.throttleDelayMs": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "Throttle delay in milliseconds between image OCR tasks."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

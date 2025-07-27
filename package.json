@@ -2,7 +2,7 @@
   "name": "markdown-image-to-text",
   "displayName": "MarkdownImageToText",
   "description": "Simple extension that will generate the text from an image link inside your markdown file",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -19,8 +19,12 @@
     "languages": [
       {
         "id": "markdown",
-        "extensions": [".md"],
-        "aliases": ["Markdown"]
+        "extensions": [
+          ".md"
+        ],
+        "aliases": [
+          "Markdown"
+        ]
       }
     ],
     "commands": [
@@ -74,6 +78,7 @@
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
+    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^9.25.1",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",

@@ -2,7 +2,7 @@
   "name": "markdown-image-to-text",
   "displayName": "MarkdownImageToText",
   "description": "Simple extension that will generate the text from an image link inside your markdown file",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -13,7 +13,7 @@
     "onLanguage:markdown",
     "onCommand:markdown-image-to-text.getTextFromImage"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "publisher": "DemetriosLoizides",
   "contributes": {
     "languages": [

@@ -84,40 +84,78 @@ function activate(context) {
     context.subscriptions.push(disposable);
     const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
         const MAX_CONCURRENT_WORKERS = 2;
-        const THROTTLE_DELAY_MS = 500; // wait time between batches
+        const THROTTLE_DELAY_MS = 500;
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");
             return;
         }
         const doc = editor.document;
-        const regex = /!\[.*?\]\((.+?)\)/g;
+        const imageTasks = collectImageLinks(doc);
+        const total = imageTasks.length;
+        if (total === 0) {
+            vscode.window.showInformationMessage("No images found in document.");
+            return;
+        }
         const edit = new vscode.WorkspaceEdit();
-        for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
-            const line = doc.lineAt(lineNum);
-            let match;
-            regex.lastIndex = 0; // Reset regex for each line
-            while ((match = regex.exec(line.text))) {
-                const imagePath = match[1];
+        const startTime = Date.now();
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Running OCR on all images...",
+            cancellable: false
+        }, async (progress) => {
+            let completed = 0;
+            const queue = [...imageTasks];
+            const runningWorkers = [];
+            const runWorker = async (task) => {
+                const { line, path } = task;
                 try {
-                    const imageData = await getImageData({ imagePath, docUri: doc.uri.toString(), line: lineNum }, doc);
+                    const imageData = await getImageData({ imagePath: path, docUri: doc.uri.toString(), line }, doc);
                     const formattedText = await getFormattedText(imageData);
-                    const insertPosition = new vscode.Position(lineNum + 1, 0);
-                    insertFormattedText(edit, doc, insertPosition, formattedText);
+                    const insertPos = new vscode.Position(line + 1, 0);
+                    insertFormattedText(edit, doc, insertPos, formattedText);
                 }
                 catch (err) {
-                    vscode.window.showErrorMessage(`Failed to OCR image on line ${lineNum + 1}: ${err instanceof Error ? err.message : err}`);
+                    vscode.window.showErrorMessage(`OCR failed at line ${line + 1}: ${err instanceof Error ? err.message : err}`);
                 }
-            }
-        }
+                finally {
+                    completed++;
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    const rate = completed / elapsed;
+                    const eta = rate > 0 ? ((total - completed) / rate) : 0;
+                    progress.report({
+                        message: `Processed ${completed}/${total} | Line ${task.line + 1} | ETA: ${eta.toFixed(1)}s`,
+                        increment: (100 / total)
+                    });
+                    await delay(THROTTLE_DELAY_MS);
+                }
+            };
+            const spawnWorkers = async () => {
+                while (queue.length > 0) {
+                    while (runningWorkers.length < MAX_CONCURRENT_WORKERS && queue.length > 0) {
+                        const task = queue.shift();
+                        const worker = runWorker(task).finally(() => {
+                            const index = runningWorkers.indexOf(worker);
+                            if (index !== -1)
+                                runningWorkers.splice(index, 1);
+                        });
+                        runningWorkers.push(worker);
+                    }
+                    await Promise.race(runningWorkers);
+                }
+                await Promise.all(runningWorkers);
+            };
+            await spawnWorkers();
+        });
         await vscode.workspace.applyEdit(edit);
+        vscode.window.showInformationMessage(`OCR complete for ${imageTasks.length} image(s).`);
     });
     context.subscriptions.push(scanAllImagesCommand);
 }
+function deactivate() { }
 function insertFormattedText(edit, doc, insertPosition, formattedText) {
     edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
 }
-function deactivate() { }
 async function getFormattedText(imageData) {
     const worker = await (0, tesseract_js_1.createWorker)();
     await worker.load();
@@ -153,5 +191,18 @@ function fetchImageBuffer(urlStr) {
 }
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+function collectImageLinks(doc) {
+    const regex = /!\[.*?\]\((.+?)\)/g;
+    const results = [];
+    for (let line = 0; line < doc.lineCount; line++) {
+        const text = doc.lineAt(line).text;
+        regex.lastIndex = 0;
+        let match;
+        while ((match = regex.exec(text))) {
+            results.push({ line, path: match[1] });
+        }
+    }
+    return results;
 }
 //# sourceMappingURL=extension.js.map

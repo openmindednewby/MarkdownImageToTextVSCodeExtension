@@ -96,14 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage(`OCR failed at line ${line + 1}: ${err instanceof Error ? err.message : err}`);
             } finally {
                 completed++;
-                const elapsed = (Date.now() - startTime) / 1000;
-                const rate = completed / elapsed;
-                const eta = rate > 0 ? ((total - completed) / rate) : 0;
-
-                progress.report({
-                    message: `Processed ${completed}/${total} | Line ${task.line + 1} | ETA: ${eta.toFixed(1)}s`,
-                    increment: (100 / total)
-                });
+                printReport(startTime, completed, total, progress, task);
 
                 await delay(THROTTLE_DELAY_MS);
             }
@@ -137,8 +130,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 }
 
-
 export function deactivate() {}
+
+function printReport(startTime: number, completed: number, total: number, progress: vscode.Progress<{ message?: string; increment?: number; }>, task: { line: number; path: string; }) {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const rate = completed / elapsed;
+    const eta = rate > 0 ? ((total - completed) / rate) : 0;
+
+    progress.report({
+        message: `Processed ${completed}/${total} | Line ${task.line + 1} | ETA: ${eta.toFixed(1)}s`,
+        increment: (100 / total)
+    });
+}
 
 function insertFormattedText(edit: vscode.WorkspaceEdit, doc: vscode.TextDocument, insertPosition: vscode.Position, formattedText: string) {
     edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);

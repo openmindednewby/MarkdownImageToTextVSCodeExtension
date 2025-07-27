@@ -84,7 +84,7 @@ function activate(context) {
     context.subscriptions.push(disposable);
     const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
         const MAX_CONCURRENT_WORKERS = 4;
-        const THROTTLE_DELAY_MS = 50;
+        const THROTTLE_DELAY_MS = 5;
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor found.");
@@ -120,13 +120,7 @@ function activate(context) {
                 }
                 finally {
                     completed++;
-                    const elapsed = (Date.now() - startTime) / 1000;
-                    const rate = completed / elapsed;
-                    const eta = rate > 0 ? ((total - completed) / rate) : 0;
-                    progress.report({
-                        message: `Processed ${completed}/${total} | Line ${task.line + 1} | ETA: ${eta.toFixed(1)}s`,
-                        increment: (100 / total)
-                    });
+                    printReport(startTime, completed, total, progress, task);
                     await delay(THROTTLE_DELAY_MS);
                 }
             };
@@ -153,6 +147,15 @@ function activate(context) {
     context.subscriptions.push(scanAllImagesCommand);
 }
 function deactivate() { }
+function printReport(startTime, completed, total, progress, task) {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const rate = completed / elapsed;
+    const eta = rate > 0 ? ((total - completed) / rate) : 0;
+    progress.report({
+        message: `Processed ${completed}/${total} | Line ${task.line + 1} | ETA: ${eta.toFixed(1)}s`,
+        increment: (100 / total)
+    });
+}
 function insertFormattedText(edit, doc, insertPosition, formattedText) {
     edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
 }

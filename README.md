@@ -1,70 +1,46 @@
-# MarkdownOCRVSCodeExtension
-Simple VSCode extension that takes an image from a markdown file and generates the text
+# 🖼️ Markdown Image to Text (OCR)
 
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+A Visual Studio Code extension that extracts text from images in Markdown files using [Tesseract.js](https://github.com/naptha/tesseract.js).  
+Simply hover over an image in a Markdown file and click **Extract text** — or run OCR across the entire document in one go!
 
 ---
 
-## Following extension guidelines
+## 🚀 Features
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+- 🔍 **Hover over an image** to extract its text
+- 📑 **Batch scan** all images in a document and paste extracted text below each one
+- ⏱️ **Progress indicator** with ETA and image count
+- ⚙️ **Configurable concurrency and throttling**
+- 🧠 Uses Tesseract.js under the hood for client-side OCR
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+---
 
-## Working with Markdown
+## ✨ Demo
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+**Extract Simple Image On Hover**
+![Extract Simple Image On Hover](https://github.com/openmindednewby/MarkdownImageToTextVSCodeExtension/extractTextFromSingleImage.gif)
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+**Extract For the Whole File**
+![Extract For the Whole File](https://github.com/openmindednewby/MarkdownImageToTextVSCodeExtension/extractTextFromTheWholeFile.gif)
 
-## For more information
+---
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+## 📥 Installation
 
-**Enjoy!**
+Install via the **Extensions** panel in VS Code:
+
+1. Open the Extensions view: `Ctrl+Shift+X` (or `Cmd+Shift+X` on macOS)
+2. Search for `Markdown Image to Text`
+3. Click **Install**
+
+Or install from the [VS Code Marketplace](https://marketplace.visualstudio.com/VSCode).
+
+---
+
+## 🧑‍🏫 How to Use
+
+### ▶️ 1. Hover to Extract
+
+- In a Markdown file, hover over an image link:
+  ```markdown
+  ![example](./example.png)

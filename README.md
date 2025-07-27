@@ -18,10 +18,10 @@ Simply hover over an image in a Markdown file and click **Extract text** — or 
 ## ✨ Demo
 
 **Extract Simple Image On Hover**
-![Extract Simple Image On Hover](https://github.com/openmindednewby/MarkdownImageToTextVSCodeExtension/extractTextFromSingleImage.gif)
+![Extract Simple Image On Hover](./extractTextFromSingleImage.gif)
 
 **Extract For the Whole File**
-![Extract For the Whole File](https://github.com/openmindednewby/MarkdownImageToTextVSCodeExtension/extractTextFromTheWholeFile.gif)
+![Extract For the Whole File](./extractTextFromTheWholeFile.gif)
 
 ---
 

@@ -50,6 +50,10 @@
       }
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openmindednewby/MarkdownImageToTextVSCodeExtension"
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",

@@ -44,3 +44,7 @@ Or install from the [VS Code Marketplace](https://marketplace.visualstudio.com/V
 - In a Markdown file, hover over an image link:
   ```markdown
   ![example](./example.png)
+  ```
+  ![example](./hoverText.jpg)
+
+

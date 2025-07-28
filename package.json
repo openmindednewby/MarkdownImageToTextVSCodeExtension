@@ -2,7 +2,7 @@
   "name": "markdown-image-to-text",
   "displayName": "MarkdownImageToText",
   "description": "Simple extension that will generate the text from an image link inside your markdown file",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -15,6 +15,11 @@
   ],
   "main": "./out/extension.js",
   "publisher": "DemetriosLoizides",
+  "files": [
+    "out",
+    "out/tesseract.js-core",
+    "out/tesseract.js"
+  ],
   "contributes": {
     "languages": [
       {

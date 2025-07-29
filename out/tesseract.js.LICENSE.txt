@@ -1,1 +1,0 @@
-/*! For license information please see tesseract.min.js.LICENSE.txt */

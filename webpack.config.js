@@ -10,7 +10,6 @@ const path = require('path');
 const extensionConfig = {
   target: 'node',
   mode: 'none',
-
   entry: './src/extension.ts',
   output: {
     path: path.resolve(__dirname, 'out'),
@@ -23,7 +22,7 @@ const extensionConfig = {
   },
 
   resolve: {
-    extensions: ['.ts', '.js', '.wasm']
+    extensions: ['.ts', '.js']
   },
 
   module: {
@@ -33,10 +32,6 @@ const extensionConfig = {
         exclude: /node_modules/,
         use: 'ts-loader'
       },
-      {
-        test: /\.wasm$/,
-        type: 'asset/resource'
-      }
     ]
   },
 
@@ -44,17 +39,18 @@ const extensionConfig = {
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'node_modules/tesseract.js-core'),
-          to: path.resolve(__dirname, 'out/tesseract.js-core')
+          from: path.resolve(__dirname, 'node_modules/tesseract.js-core/tesseract-core.wasm'),
+          to: path.resolve(__dirname, 'out/tesseract.js-core/tesseract-core.wasm'),
+          noErrorOnMissing: true // Avoid build failure if file is missing
         },
         {
-          from: path.resolve(__dirname, 'node_modules/tesseract.js/dist'),
-          to: path.resolve(__dirname, 'out/tesseract.js')
+          from: path.resolve(__dirname, 'node_modules/tesseract.js/dist/worker.min.js'),
+          to: path.resolve(__dirname, 'out/tesseract.js/worker.min.js'),
+          noErrorOnMissing: true
         }
       ]
     })
   ],
-
   devtool: 'nosources-source-map',
   infrastructureLogging: {
     level: 'log'

@@ -51,8 +51,11 @@ foreach ($folder in $tesseractRelated) {
     }
 }
 
-Write-Host "Running 'npm version patch'..."
-npm version patch
+Write-Host "Packaging in development mode (no compression/minification)..."
+npm run compile # Use webpack in development mode (mode: none, no minification)
+
+# Optionally, skip version bump for dev builds
+# npm version patch
 
 Write-Host "Running 'vsce package'..."
 vsce package

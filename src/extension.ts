@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import { createWorker } from '../src/tesseract.js/src/index.js';
+import { createWorker } from './tesseract.js/src/index.js';
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';

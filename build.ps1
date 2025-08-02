@@ -34,6 +34,23 @@ foreach ($module in $nodeModulesToCopy) {
     }
 }
 
+
+# Copy all tesseract-related files and folders from src to out
+$tesseractRelated = @("tesseract.js", "tesseract.js-core", "@tesseract.js-data")
+foreach ($folder in $tesseractRelated) {
+    $srcPath = Join-Path -Path "src" -ChildPath $folder
+    $destPath = Join-Path -Path $OutDir -ChildPath $folder
+    if (Test-Path $srcPath) {
+        Write-Host "Copying $folder from $srcPath to $destPath ..."
+        if (-not (Test-Path $destPath)) {
+            New-Item -ItemType Directory -Path $destPath -Force | Out-Null
+        }
+        Copy-Item -Recurse -Force $srcPath\* $destPath
+    } else {
+        Write-Warning "$folder not found in src, skipping..."
+    }
+}
+
 Write-Host "Running 'npm version patch'..."
 npm version patch
 

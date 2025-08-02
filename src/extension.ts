@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import { createWorker } from 'tesseract.js';
+import { createWorker } from '../src/tesseract.js/src/index.js';
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
@@ -38,16 +38,21 @@ export function activate(context: vscode.ExtensionContext) {
         async (args: { imagePath: string; docUri: string; line: number }) => {
             try {
                 const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.docUri));
-
                 const imageData: Buffer = await getImageData(args, doc);
-                const formattedText = await getFormattedText(imageData);
-
+                const formattedText = await getFormattedText(imageData, context);
                 const edit = new vscode.WorkspaceEdit();
                 const insertPosition = new vscode.Position(args.line + 1, 0);
                 insertFormattedText(edit, doc, insertPosition, formattedText);
                 await vscode.workspace.applyEdit(edit);
             } catch (err) {
-                vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
+                // Print full error to debug console and show message in UI
+                if (err instanceof Error) {
+                    console.error('[MarkdownOCR] OCR failed:', err);
+                    vscode.window.showErrorMessage(`OCR failed: ${err.message}`);
+                } else {
+                    console.error('[MarkdownOCR] OCR failed (non-Error):', err);
+                    vscode.window.showErrorMessage(`OCR failed: ${String(err)}`);
+                }
             }
         });
 
@@ -90,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
             const { line, path } = task;
                     try {
                 const imageData = await getImageData({ imagePath: path, docUri: doc.uri.toString(), line }, doc);
-                const formattedText = await getFormattedText(imageData);
+                const formattedText = await getFormattedText(imageData, context);
                 const insertPos = new vscode.Position(line + 1, 0);
                         insertFormattedText(edit, doc, insertPos, formattedText);
                     } catch (err) {
@@ -109,7 +114,9 @@ export function activate(context: vscode.ExtensionContext) {
                     const task = queue.shift()!;
                     const worker = runWorker(task).finally(() => {
                         const index = runningWorkers.indexOf(worker);
-                        if (index !== -1) runningWorkers.splice(index, 1);
+                        if (index !== -1) {
+                            runningWorkers.splice(index, 1);
+                        }
                     });
                     runningWorkers.push(worker);
                 }
@@ -207,13 +214,18 @@ function insertFormattedText(edit: vscode.WorkspaceEdit, doc: vscode.TextDocumen
     edit.insert(doc.uri, insertPosition, `\n\n${formattedText}\n`);
 }
 
-async function getFormattedText(imageData: Buffer<ArrayBufferLike>) {
-    const worker = await createWorker();
-    await worker.load();
-    const { data: { text } } = await worker.recognize(imageData);
-    const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
-    await worker.terminate();
-    return formattedText;
+async function getFormattedText(imageData: Buffer<ArrayBufferLike>, context: vscode.ExtensionContext) {
+    try {
+        const worker = await createWorker();
+        await worker.load();
+        const { data: { text } } = await worker.recognize(imageData);
+        const formattedText = text.trim().replace(/\r?\n/g, '  \n'); // Adds markdown line breaks
+        await worker.terminate();
+        return formattedText;
+    } catch (err) {
+        console.error('[MarkdownOCR] Tesseract OCR error:', err);
+        throw err;
+    }
 }
 
 async function getImageData(args: { imagePath: string; docUri: string; line: number; }, doc: vscode.TextDocument) {

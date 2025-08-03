@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                 const edit = new vscode.WorkspaceEdit();
                 const insertPosition = new vscode.Position(args.line + 1, 0);
-                    insertFormattedText(edit, doc, insertPosition, formattedText);
+                insertFormattedText(edit, doc, insertPosition, formattedText);
                 await vscode.workspace.applyEdit(edit);
             } catch (err) {
                 vscode.window.showErrorMessage(`OCR failed: ${err instanceof Error ? err.message : err}`);
@@ -54,53 +54,53 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     
-   const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
+    const scanAllImagesCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImages', async () => {
     const config = vscode.workspace.getConfiguration("markdownImageToText");
     const MAX_CONCURRENT_WORKERS = config.get<number>("maxConcurrentWorkers", 4);
     const THROTTLE_DELAY_MS = config.get<number>("throttleDelayMs", 5);
 
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        vscode.window.showErrorMessage("No active editor found.");
-        return;
-    }
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor found.");
+            return;
+        }
 
-    const doc = editor.document;
-    const imageTasks = collectImageLinks(doc);
-    const total = imageTasks.length;
+        const doc = editor.document;
+        const imageTasks = collectImageLinks(doc);
+        const total = imageTasks.length;
 
-    if (total === 0) {
-        vscode.window.showInformationMessage("No images found in document.");
-        return;
-    }
+        if (total === 0) {
+            vscode.window.showInformationMessage("No images found in document.");
+            return;
+        }
 
-    const edit = new vscode.WorkspaceEdit();
-    const startTime = Date.now();
+        const edit = new vscode.WorkspaceEdit();
+        const startTime = Date.now();
 
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Running OCR on all images...",
-        cancellable: false
-    }, async (progress) => {
-        let completed = 0;
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Running OCR on all images...",
+            cancellable: false
+        }, async (progress) => {
+            let completed = 0;
         const queue = [...imageTasks];
         const runningWorkers: Promise<void>[] = [];
 
         const runWorker = async (task: { line: number; path: string }) => {
             const { line, path } = task;
-            try {
+                    try {
                 const imageData = await getImageData({ imagePath: path, docUri: doc.uri.toString(), line }, doc);
                 const formattedText = await getFormattedText(imageData);
                 const insertPos = new vscode.Position(line + 1, 0);
-                insertFormattedText(edit, doc, insertPos, formattedText);
-            } catch (err) {
+                        insertFormattedText(edit, doc, insertPos, formattedText);
+                    } catch (err) {
                 vscode.window.showErrorMessage(`OCR failed at line ${line + 1}: ${err instanceof Error ? err.message : err}`);
-            } finally {
-                completed++;
-                printReport(startTime, completed, total, progress, task);
+                    } finally {
+                        completed++;
+                        printReport(startTime, completed, total, progress, task);
 
                 if( THROTTLE_DELAY_MS > 0) await delay(THROTTLE_DELAY_MS);
-            }
+                    }
         };
 
         const spawnWorkers = async () => {
@@ -120,18 +120,77 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         await spawnWorkers();
-    });
+        });
 
-    await vscode.workspace.applyEdit(edit);
-    vscode.window.showInformationMessage(`OCR complete for ${imageTasks.length} image(s).`);
-});
+        await vscode.workspace.applyEdit(edit);
+        vscode.window.showInformationMessage(`OCR complete for ${imageTasks.length} image(s).`);
+    });
 
 
     context.subscriptions.push(scanAllImagesCommand);
 
+    
+    const scanAllImagesLargeFileCommand = vscode.commands.registerCommand('markdown-image-to-text.getTextFromAllImagesLargeFile', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor found.");
+            return;
+        }
+
+        const doc = editor.document;
+        const imageTasks = collectImageLinks(doc);
+        const total = imageTasks.length;
+
+        if (total === 0) {
+            vscode.window.showInformationMessage("No images found in document.");
+            return;
+        }
+
+        const edit = new vscode.WorkspaceEdit();
+        const startTime = Date.now();
+        const BATCH_SIZE = 10;
+
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Running OCR on all images...",
+            cancellable: false
+        }, async (progress) => {
+            let completed = 0;
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = imageTasks.slice(i, i + BATCH_SIZE);
+                const worker = await createWorker();
+                await worker.load();
+
+                for (const task of batch) {
+                    try {
+                        const imageData = await getImageData({ imagePath: task.path, docUri: doc.uri.toString(), line: task.line }, doc);
+                        const { data: { text } } = await worker.recognize(imageData);
+                        const formattedText = text.trim().replace(/\r?\n/g, '  \n');
+                        const insertPos = new vscode.Position(task.line + 1, 0);
+                        insertFormattedText(edit, doc, insertPos, formattedText);
+                    } catch (err) {
+                        vscode.window.showErrorMessage(`OCR failed at line ${task.line + 1}: ${err instanceof Error ? err.message : err}`);
+                    } finally {
+                        completed++;
+                        printReport(startTime, completed, total, progress, task);
+                    }
+                }
+
+                await worker.terminate();
+                global.gc?.();
+            }
+        });
+
+        await vscode.workspace.applyEdit(edit);
+        vscode.window.showInformationMessage(`OCR complete for ${imageTasks.length} image(s).`);
+    });
+    
+    context.subscriptions.push(scanAllImagesLargeFileCommand);
 }
 
-export function deactivate() {}
+
+
+export function deactivate() { }
 
 function printReport(startTime: number, completed: number, total: number, progress: vscode.Progress<{ message?: string; increment?: number; }>, task: { line: number; path: string; }) {
     const elapsed = (Date.now() - startTime) / 1000;
@@ -158,19 +217,19 @@ async function getFormattedText(imageData: Buffer<ArrayBufferLike>) {
 }
 
 async function getImageData(args: { imagePath: string; docUri: string; line: number; }, doc: vscode.TextDocument) {
-	let imageData: Buffer;
+    let imageData: Buffer;
 
-	if (args.imagePath.startsWith('http')) {
-		imageData = await fetchImageBuffer(args.imagePath);
-	} else {
-		const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
-		const fullPath = workspaceRoot
-			? path.join(workspaceRoot, args.imagePath)
-			: path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
+    if (args.imagePath.startsWith('http')) {
+        imageData = await fetchImageBuffer(args.imagePath);
+    } else {
+        const workspaceRoot = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
+        const fullPath = workspaceRoot
+            ? path.join(workspaceRoot, args.imagePath)
+            : path.resolve(path.dirname(doc.uri.fsPath), args.imagePath);
 
-		imageData = await fs.readFile(fullPath);
-	}
-	return imageData;
+        imageData = await fs.readFile(fullPath);
+    }
+    return imageData;
 }
 
 function fetchImageBuffer(urlStr: string): Promise<Buffer> {

@@ -40,6 +40,10 @@
       {
         "command": "markdown-image-to-text.getTextFromAllImages",
         "title": "Extract Text from All Images in Markdown file"
+      },
+      {
+        "command": "markdown-image-to-text.getTextFromAllImagesLargeFile",
+        "title": "Extract Text from All Images in a Large Markdown file (slower but does not break)"
       }
     ],
     "configuration": {

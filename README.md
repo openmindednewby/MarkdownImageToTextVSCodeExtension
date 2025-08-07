@@ -1,4 +1,10 @@
-[//]: # (⚠️ VS Code extension is not working in packaged mode yet — only works in development mode. Pending response on a thread in the tesseract.js project. https://github.com/naptha/tesseract.js/discussions/1028)
+<!-- ⚠️ VS Code extension is not working in packaged mode yet — only works in development mode. Pending response on a thread in the tesseract.js project. https://github.com/naptha/tesseract.js/discussions/1028 -->
+
+<div style="border:1px solid red; padding:10px; background-color:#ffe6e6; color:#b30000; font-weight:bold;">
+⚠️ VS Code extension is currently <u>not working in packaged mode</u> — it only functions in development mode.<br>
+Pending response on this thread in the tesseract.js project:<br>
+<a href="https://github.com/naptha/tesseract.js/discussions/1028" target="_blank">https://github.com/naptha/tesseract.js/discussions/1028</a>
+</div>
 
 
 # 🖼️ Markdown Image to Text (OCR)

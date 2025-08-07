@@ -1,3 +1,6 @@
+[//]: # (⚠️ VS Code extension is not working in packaged mode yet — only works in development mode. Pending response on a thread in the tesseract.js project. https://github.com/naptha/tesseract.js/discussions/1028)
+
+
 # 🖼️ Markdown Image to Text (OCR)
 
 A Visual Studio Code extension that extracts text from images in Markdown files using [Tesseract.js](https://github.com/naptha/tesseract.js).  
